@@ -1,0 +1,231 @@
+---
+title: "Projeto final"
+author: "Rodrigo Camacho"
+date: "2023-04-10"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Base de dados e Objetivo do Trabalho
+Analisarei a base de dados de crimes do Estado do Rio de janeiro entre os anos
+de 2003 a 2013.A base possui inúmeras variáves, em sua maioria associadas à
+tipificação legal do crime.
+O Objetivo deste trabalho será a exploração dos dados associados ao furto de
+bicicletas.
+
+
+## Importando e carregando o pacotes
+
+```{r carregando bibliotecas, echo= TRUE , message=FALSE, warning=FALSE}
+
+library(conflicted)
+library(tidyverse)
+library(dlookr)
+library(summarytools)
+library(knitr)
+library(corrplot)
+library(lubridate) 
+library(GGally)
+
+```
+
+# Carregando o Dataset
+
+Utilizei a read_csv2(), pois o separador eh o ";".
+
+```{r Dataset, include=FALSE}
+
+base_dados <- read_csv2("BaseDPEvolucaoMensalCisp.csv")
+
+
+```
+
+
+## Analise preliminar do Dataset
+ Avaliando os tipos de variáveis:
+
+```{r Variáveis do Dataset}
+
+dlookr:: diagnose(base_dados) 
+
+
+```
+
+Devido ao número excessivo de variáveis, faremos uma análise baseadas apenas nas
+variáveis categóricas,  nas variáveies associadas aos crimes de furto e no 
+registro de ocorrência, por acreditar que podemos encontrar mais correlação
+nessas variáves.
+
+```{r Reduzindo o Dataset}
+
+base_dados_reduzida <- dplyr:: select( base_dados, c(mes, ano, munic, AISP, Regiao,furto_veiculos, furto_transeunte, furto_coletivo, furto_celular, outros_furtos, furto_bicicleta, registro_ocorrencias     ))
+
+```
+
+
+```{r Característics do Dataset}
+
+dlookr:: diagnose(base_dados_reduzida)     
+
+```
+
+É possível observar uma grande quantidade de dados faltantes na variável:
+furto_biciletas (53,93%).
+
+### Investigando o padrão de valores faltantes - Completude de dados
+
+
+
+```{r Valores faltantes}
+
+base_dados_reduzida %>% 
+select(c(ano, furto_bicicleta, outros_furtos ))  %>% 
+na.omit()    %>%       
+dplyr::group_by(ano) %>%
+dplyr::summarise(Contagem_registro_f_bicicleta = n())
+
+
+base_dados_reduzida %>% 
+select(c(ano, furto_bicicleta ))  %>% 
+dplyr::group_by(ano) %>%
+dplyr::summarise(Contagem_todos_registros = n())
+
+```
+Comparando as tabelas acima, percebemos que os dados anteriores a 2014 estão 
+faltando para a variável "furto de bicicletas".
+Devido à natureza da falta ser de não aleatóriedade, qualquer 
+resultado de estimativa dos valores faltantes será enviesada, pois é impossível
+prever se no período anterior a 2014 houve alguma causa de aumento ou
+diminuição na nossa variável objetiva.
+
+
+Portanto, seguiremos a análise da variável de interesse removendo os dados
+ faltantes, mas, posteriormente, buscaremos entender o compartamento dessa
+variável em relação às demais variáveis para que possamos ter uma estimativa, 
+ainda que enviesada.
+
+
+
+
+
+
+### Descrevendo a variável de interesse.
+
+```{r Remoção dos missing}
+
+base_dados_reduzida_sem_missing <- base_dados_reduzida %>% 
+na.omit() 
+
+```
+
+
+
+```{r Estatística da variável objetiva}
+
+summarytools::descr(base_dados_reduzida_sem_missing$furto_bicicleta) 
+
+```
+Com base na estatística descritiva, a variável demonstra alta assimetria 
+(Skewness > 1), corroborado pela diferença entre média e sendo a média maior
+que a mediana, é um forte indicativo de skew à esquerda.
+
+
+## Buscando correlação entre as variáveis
+
+
+```{r scatter matrix plot}
+
+base_dados_reduzida_matrix <- dplyr:: select( base_dados_reduzida_sem_missing,-c(mes, ano, munic, AISP, Regiao))
+
+ggpairs(base_dados_reduzida_matrix)
+
+  
+#corrplot(cor(base_dados_reduzida_corr), type = "upper" )
+
+```
+
+Frutos de celular e de bicicleta têm uma fraca correlação.
+
+
+## Histogramas das variáveis
+
+### Definiação da quantidade de Bins
+
+Começei avaliando dois métodos para escolha do número de Bins: Friedman-Diaconis
+e Sturges. O primeiro método gera um número excessivo de bins, por termos
+intervalos inter-quartis muito pequenos e um tamanho de amostra relativamente
+grande. O resultado é um histograma demasiado detalhado,
+mas que não acrescente informação. O Segundo método entrega histogramas muitos
+resumidos, omitindo que a distribuição possui um gradiente alongado para 
+valores maiores que o primeiro bin.
+Acabei optando por valores intermediários entre os dois métodos.
+
+É possível observar que todos segue o padrão e alta frequencia para valores
+próximos de zero e que reduzem abruptamente a se afastar dessa região de 
+números mais baixo.
+
+Nenhum dos histograma obedece a uma distribuição normal, ou seja, uma  
+distribuição de probabilidade simétrica que aumenta no entorno da média, 
+resultando numa curva com aspecto de sino.
+
+```{r Histogramas }
+
+
+hist(base_dados_reduzida_matrix$furto_veiculos, breaks=40)
+
+hist(base_dados_reduzida_matrix$furto_transeunte , breaks=50)
+
+hist(base_dados_reduzida_matrix$furto_coletivo , breaks=40)
+  
+hist(base_dados_reduzida_matrix$furto_celular , breaks=80)
+  
+hist(base_dados_reduzida_matrix$furto_bicicleta , breaks= "Sturges")
+ 
+```
+
+
+
+## Testando a hipótese de normalidade
+
+
+###Shapiro-Wilk
+
+A função de shapiro.test() está limitada à análise de 5000 registros, como a
+a base possui 13.856 registros preenchidos, avaliarei a normalidade apenas
+dos últimos 3 anos.
+
+
+```{r Shapiro test }
+
+X <- 
+base_dados_reduzida_sem_missing %>% dplyr:: filter(ano <= 2016) 
+
+shapiro.test( X$furto_bicicleta)
+
+
+```
+De acordo com o resultado de p-valor, rejeita-se a hipótese nula de normalidade.
+A distribuição não é normal com intevalor de confiança de 90%.
+
+
+
+###Q-Q plot
+
+```{r QQ plot }
+
+
+qqnorm( X$furto_bicicleta)
+
+
+```
+Como é possível observar pelo gráfico, o resultado não é uma reta ascendente,
+logo, a distribuição não é normal, tal como indicado pelo teste de Shapiro-wilk.
+
+
+
