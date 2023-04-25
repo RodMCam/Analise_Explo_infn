@@ -12,40 +12,46 @@ library(shinyWidgets)
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
-
-    # Application title
-    titlePanel("Crimes de furto à Bicicleta no Estado do RJ"),
-
-    # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-          numericRangeInput(
-            inputId = "Lim_X",
-            label = "Escolher limites do eixo X :",
-            value = c(0, 1000)
-          ),
-     #     dateRangeInput("daterange", "Escolha um período:",
-     #                    
-     #                    min = "2014-01-01",
-     #                    max = "2022-01-01"
-     #     ),
-
-          numericRangeInput(
-             inputId = "Lim_Y",
-              label = "Escolher limites do eixo Y :",
-              value = c(0, 1000)
-            ), 
-         
-            selectInput("cor",
-                        "Escolha a cor do gráfico:",
-                        choices = c("light blue", "pink"),
-                        selected = "pink"
-                        )
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
+  
+  # Application title
+  titlePanel("Quantidade de crimes de furto no Estado do RJ por dia"),
+  
+  # Sidebar with a slider input for number of bins
+  sidebarLayout(
+    sidebarPanel(
+      dateRangeInput("daterange", "Escolha um per?odo:",
+                     start ="2014-01-01", 
+                     end = "2022-12-31" ,
+                     min = "2014-01-01" ,
+                     max = "2022-12-31"
+      ),
+      
+      
+      pickerInput(
+        inputId = "variavel",
+        label = ("Escolha uma vari?vel"),
+        choices = c("furto_bicicleta", "furto_coletivo"),
+        selected = "furto_bicicleta",
+        multiple = F),
+      
+      
+      numericRangeInput(
+        inputId = "Lim_Y",
+        label = "Escolher limites do eixo Y :",
+        value = c(0, 2000)
+      ), 
+      
+      selectInput("cor",
+                  "Escolha a cor do gr?fico:",
+                  choices = c("light blue", "pink"),
+                  selected = "pink"
+      )
+    ),
+    
+    
+    # Show a plot of the generated distribution
+    mainPanel(
+      plotOutput("distPlot")
     )
+  )
 ))

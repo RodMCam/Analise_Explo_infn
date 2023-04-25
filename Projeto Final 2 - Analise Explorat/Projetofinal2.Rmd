@@ -227,5 +227,18 @@ qqnorm( X$furto_bicicleta)
 Como é possível observar pelo gráfico, o resultado não é uma reta ascendente,
 logo, a distribuição não é normal, tal como indicado pelo teste de Shapiro-wilk.
 
+#Link pra o Github
+https://github.com/RodMCam/Analise_Explo_infn
+
+#Imagem do App em Shiny
+
+
+
+```{r Imagem do app }
+
+knitr::include_graphics("Shiny.png")
+
+```
+
 
 

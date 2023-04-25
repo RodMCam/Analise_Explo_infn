@@ -14,38 +14,38 @@ library(shinyWidgets)
 shinyServer(function(input, output) {
   
   #Filtra os dados de acordo com input
-
-
- #   observeEvent(input$daterange,{
-#      base_filtrada  <- base_dados_s %>% 
- #       dplyr::filter(Data >= input$daterange[1] & Data <= input$daterange[2]) 
-  #      })
-
   
   
-      output$distPlot <- renderPlot({
-
-      #  base_filtrada  <- base_dados_s  %>% 
-       #   dplyr::filter(Data >= min(input$daterange) & Data <= max(input$daterange))
-  
-        x <- base_dados_s$Data
-        
-        y <- base_dados_s$furto_bicicleta
-
-
-
-        
-
-        # draw the histogram with the specified number of bins
-        ggplot() +
-          geom_line(data =  base_dados_s,  aes(y = y , x = x, color = "" )) +
-          labs(x = "Data", y = "Quantidade de Registros",  title ="Registros de Furtos a bicicleta") +
-          theme_minimal() +
-          scale_color_manual( values = c(input$cor)) +
-     #     xlim(min(input$Lim_X),max (input$Lim_X)) +
-          ylim(min(input$Lim_Y),max (input$Lim_Y)) 
-
-
+  observeEvent(input$daterange,{
+    
+    base_filtrada  <- base_dados_s %>% 
+      dplyr::filter(Data >= input$daterange[1] & Data <= input$daterange[2]) 
+    
+    
+    
+    
+    output$distPlot <- renderPlot({
+      
+      
+      
+      x <- base_filtrada $Data
+      
+      y <- base_filtrada   %>%   dplyr::pull(input$variavel)  
+      
+      titulo <- paste("Registros de", input$variavel)
+      
+     
+      # draw the graph
+      ggplot() +
+        geom_line(data =  base_filtrada ,  aes(y = y , x = x, color = "" )) +
+        labs(x = "Data", y = "Quantidade de Registros",  title =titulo) +
+        theme_minimal() +
+        scale_color_manual( values = c(input$cor)) +
+        ylim(min(input$Lim_Y),max (input$Lim_Y)) 
+      
+      
     })
-
-})
+    
+  })
+  
+})  
